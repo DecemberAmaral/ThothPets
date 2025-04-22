@@ -1,7 +1,7 @@
 import React from 'react';
-import heroImage from '../assets/gato1.png'; // ajuste o caminho conforme necessário
-import adoptIcon from '../assets/adoptIcon.png'; // ícone para "QUERO ADOTAR"
-import helpIcon from '../assets/helpIcon.png';   // ícone para "PRECISO DE AJUDA"
+import heroImage from '../assets/gato1.png'; 
+import adoptIcon from '../assets/adoptIcon.png'; 
+import helpIcon from '../assets/helpIcon.png';   
 
 export default function Hero() {
   return (
@@ -30,7 +30,7 @@ export default function Hero() {
               Procura um amigão para a vida? O Thoth não vai te deixar na mão!
             </p>
             <button className="w-56 bg-gray-300 hover:bg-emerald-500 hover:text-white text-gray-800 font-bold text-2xl py-3 px-6 rounded transition duration-300 flex flex-col items-center">
-              <span>QUERO ADOTAR</span>
+              <span>QUERO ADOTAR!</span>
               <img
                 src={adoptIcon}
                 alt="Ícone Adotar"
@@ -45,7 +45,7 @@ export default function Hero() {
               Seu bichinho sumiu? O Thoth e seus usuários próximos da sua região te ajudarão a procurar!
             </p>
             <button className="w-56 bg-gray-300 hover:bg-emerald-500 hover:text-white text-gray-800 font-bold text-2xl py-3 px-6 rounded transition duration-300 flex flex-col items-center">
-              <span>PRECISO DE AJUDA</span>
+              <span>PRECISO DE AJUDA!</span>
               <img
                 src={helpIcon}
                 alt="Ícone Preciso de Ajuda"
