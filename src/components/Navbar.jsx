@@ -1,14 +1,15 @@
+// src/components/Navbar.jsx
 import React, { useState } from 'react';
-import ThothLogo from '../assets/ThothLogo.png'; // ajuste o caminho se necessário
+import ThothLogo from '../assets/ThothLogo.png';
 import { UserIcon, Cog6ToothIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/solid';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div>
-      <div className="w-full h-23 bg-emerald-500 flex items-center justify-center">
-        {/* Logo clicável que leva para a página inicial */}
+    <div className="fixed top-0 left-0 right-0 z-50 bg-emerald-500">
+      <div className="w-full h-23 flex items-center justify-center">
+        {/* Logo clicável */}
         <a href="/" className="h-55 w-55 object-contain mr-4">
           <img
             src={ThothLogo}
@@ -17,9 +18,9 @@ export default function Navbar() {
           />
         </a>
 
-        {/* Retângulo Nyanza com a parte interna da navbar */}
+        {/* Retângulo com a parte interna da navbar */}
         <nav className="bg-[#E9FFDB] w-[95%] max-w-7xl h-19 rounded-xl shadow-md flex items-center justify-between px-6">
-          {/* Menu desktop – somente visível em telas médias e maiores */}
+          {/* Menu desktop */}
           <ul className="hidden md:flex space-x-6 text-sm font-semibold text-gray-800">
             <li>
               <a href="#" className="hover:text-emerald-600 transition">
@@ -42,8 +43,6 @@ export default function Navbar() {
               </a>
             </li>
           </ul>
-          
-          
 
           <div className="hidden md:flex items-center space-x-4">
             <button className="flex items-center text-sm font-semibold text-gray-800 hover:text-emerald-600 transition">
@@ -53,7 +52,7 @@ export default function Navbar() {
             <Cog6ToothIcon className="h-6 w-6 text-gray-800 hover:text-emerald-600 transition cursor-pointer" />
           </div>
 
-          {/* Botão hamburger – somente visível em telas pequenas */}
+          {/* Botão hamburger para mobile */}
           <div className="md:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -70,7 +69,7 @@ export default function Navbar() {
         </nav>
       </div>
 
-      {/* Menu mobile – exibido somente se menuOpen for true */}
+      {/* Menu mobile */}
       {menuOpen && (
         <div className="md:hidden bg-[#E9FFDB] w-[95%] max-w-7xl mx-auto mt-2 rounded-xl shadow-md px-6 py-4">
           <ul className="flex flex-col space-y-4 text-sm font-semibold text-gray-800">
