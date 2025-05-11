@@ -1,9 +1,6 @@
-// src/components/AdoptionCard.jsx
-import React from "react";
-
 export default function AdoptionCard({ animal }) {
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center w-full sm:w-[320px]">
+    <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center w-full">
       {/* Área para a imagem */}
       <div className="h-40 w-full bg-gray-200 rounded mb-4 overflow-hidden flex items-center justify-center">
         {animal.image ? (

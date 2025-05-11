@@ -1,5 +1,4 @@
-// src/components/AdoptionActions.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function AdoptionActions({ onFilterChange }) {
   const [filters, setFilters] = useState({
@@ -85,7 +84,6 @@ export default function AdoptionActions({ onFilterChange }) {
             <option value="PR">PR</option>
             <option value="SP">SP</option>
             <option value="RJ">RJ</option>
-            {/* Adicione mais conforme necessário */}
           </select>
         </div>
         {/* Cidade */}
@@ -101,7 +99,6 @@ export default function AdoptionActions({ onFilterChange }) {
             <option value="Ivaiporã">Ivaiporã</option>
             <option value="Curitiba">Curitiba</option>
             <option value="São Paulo">São Paulo</option>
-            {/* Adicione as cidades conforme necessário */}
           </select>
         </div>
         {/* Idade */}

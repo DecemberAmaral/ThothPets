@@ -1,8 +1,6 @@
-import React from 'react';
-
 export default function Hero({ backgroundImage, title, children }) {
   return (
-    <section className="relative h-screen w-full">
+    <section className="relative h-[600px] w-full">
       {/* Imagem de fundo */}
       <img
         src={backgroundImage}
@@ -10,16 +8,18 @@ export default function Hero({ backgroundImage, title, children }) {
         className="w-full h-full object-cover"
       />
       {/* Sobreposição para melhorar a legibilidade */}
-      <div className="absolute inset-0 bg-black opacity-50"></div>
+      <div className="absolute inset-0 bg-black opacity-30"></div>
       
-      {/* Conteúdo do Hero: título e conteúdo adicional */}
-      <div className="absolute inset-0 flex flex-col items-center justify-start gap-4 px-4 pt-59">
-        {/* Título, ex: "Adoção" */}
-        <h1 className="text-white text-3xl md:text-6xl font-bold text-center">
+      {/* Container para o título centralizado */}
+      <div className="absolute inset-0 flex flex-col justify-center items-center px-4">
+        <h1 className="text-white text-3xl md:text-5xl font-bold text-center">
           {title}
         </h1>
-        {/* Container para o children, posicionado abaixo do título */}
-        <div className="mt-8 w-full max-w-4xl">
+      </div>
+      
+      {/* Container para os children, posicionado na parte inferior e ajustado para sobrepor o background */}
+      <div className="absolute left-0 right-0 bottom-0 flex justify-center transform translate-y-[60%]">
+        <div className="w-full max-w-4xl">
           {children}
         </div>
       </div>

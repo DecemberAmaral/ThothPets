@@ -1,1 +1,23 @@
 @import "tailwindcss";
+/* Para navegadores Webkit (Chrome, Safari, Opera, Edge Chromium) */
+::-webkit-scrollbar {
+  width: 12px; /* Largura vertical da scrollbar */
+  height: 12px; /* Altura horizontal da scrollbar, se aplicável */
+}
+
+::-webkit-scrollbar-track {
+  background: #B2D8B2; /* Cor clara para a área de fundo da scrollbar */
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #10B981; /* Cor emerald para a parte rolável (thumb) */
+  border-radius: 6px;
+  border: 3px solid #B2D8B2; /* Opcional: cria um espaço entre thumb e track */
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin; /* Opções: auto, thin ou none */
+  scrollbar-color: #10B981 #B2D8B2; /* Primeiro valor para a thumb, segundo para a track */
+}

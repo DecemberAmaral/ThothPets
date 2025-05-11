@@ -1,4 +1,4 @@
-import React from 'react';
+// src/components/HomeActions.jsx
 import { useNavigate } from 'react-router-dom';
 import adoptIcon from '../assets/adoptIcon.png';
 import helpIcon from '../assets/helpIcon.png';
@@ -11,11 +11,11 @@ export default function HomeActions() {
   };
 
   const handlePrecisoAjuda = () => {
-    navigate('/ajuda');   // Redireciona para uma página de ajuda (ajuste conforme necessário)
+    navigate('/resgate');   // Redireciona para a página de ajuda
   };
 
   return (
-    <div className="mt-8 w-[90%] max-w-4xl bg-white rounded-lg shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-8 mx-auto">
+    <div className="w-[90%] max-w-4xl bg-white rounded-lg shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-8 mx-auto mb-20">
       {/* Botão "Quero Adotar" */}
       <div className="flex flex-col items-center text-center">
         <p className="text-gray-800 text-xl font-bold mb-4">

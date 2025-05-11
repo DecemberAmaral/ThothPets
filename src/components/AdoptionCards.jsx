@@ -1,5 +1,3 @@
-// src/components/AdoptionCards.jsx
-import React from "react";
 import AdoptionCard from "./AdoptionCard";
 
 const dummyAnimals = [
@@ -10,7 +8,7 @@ const dummyAnimals = [
     size: "grande",
     state: "PR",
     city: "Ivaiporã",
-    age: "2", // Valor numérico em string
+    age: "2",
     name: "Rex",
     description: "Amigável e brincalhão!",
     location: "Ivaiporã, PR",
@@ -33,11 +31,10 @@ const dummyAnimals = [
     gender: "Fêmea",
     image: "",
   },
-  // Adicione mais animais conforme necessário. Certifique-se de que IDs maiores correspondam ao post mais recente.
+  // Adicione mais animais conforme necessário.
 ];
 
 export default function AdoptionCards({ filter }) {
-  // Filtra os animais conforme os filtros selecionados
   const filteredAnimals = dummyAnimals.filter((animal) => {
     let ageValid = true;
     if (filter.age !== "") {
@@ -52,7 +49,6 @@ export default function AdoptionCards({ filter }) {
         ageValid = numericAge > 5;
       }
     }
-
     return (
       (filter.species === "" || animal.species === filter.species) &&
       (filter.sex === "" || animal.gender.toLowerCase() === filter.sex.toLowerCase()) &&
@@ -63,11 +59,10 @@ export default function AdoptionCards({ filter }) {
     );
   });
 
-  // Ordena os animais do mais recente para o menos recente (supondo que IDs maiores são mais recentes)
   const sortedAnimals = filteredAnimals.sort((a, b) => b.id - a.id);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12">
       {sortedAnimals.map((animal) => (
         <AdoptionCard key={animal.id} animal={animal} />
       ))}
