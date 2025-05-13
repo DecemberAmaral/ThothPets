@@ -1,21 +1,32 @@
 // src/pages/CadastroAdocao.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { IMaskInput } from "react-imask"; // Importa o IMaskInput
+import { supabase } from "../supabaseClient";
 import Hero from "../components/Hero";
-import cadastroAdocaoImg from "../assets/cadastroAdocaoImg.png"; // Altere para o caminho da sua imagem
+import cadastroAdocaoImg from "../assets/cadastroAdocaoImg.png"; // Corrija o caminho se necessário
 
 export default function CadastroAdocao() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     nome: "",
     especie: "",
     sexo: "",
     porte: "",
     idade: "",
-    unidadeIdade: "anos",
+    unidadeIdade: "anos", // "anos" ou "meses"
     cidade: "",
     cep: "",
     estado: "",
     foto: null,
+    description: "",
+    breed: "",
+    contact: ""
   });
+
+  // Estado para definir se o contato informado é telefone ou email
+  const [contactType, setContactType] = useState("phone");
 
   const [errors, setErrors] = useState({});
   const [idadeError, setIdadeError] = useState("");
@@ -31,12 +42,11 @@ export default function CadastroAdocao() {
     const updatedFormData = { ...formData, [name]: value };
     setFormData(updatedFormData);
 
-    // Remove o erro se o campo for preenchido
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: false }));
     }
 
-    // Validação específica para idade
+    // Validação específica para idade: se a unidade for "meses", limite a 11
     if (name === "idade" || name === "unidadeIdade") {
       if (
         updatedFormData.unidadeIdade === "meses" &&
@@ -52,10 +62,9 @@ export default function CadastroAdocao() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Campos obrigatórios
     const requiredFields = [
       "nome",
       "especie",
@@ -66,6 +75,9 @@ export default function CadastroAdocao() {
       "cep",
       "estado",
       "foto",
+      "description",
+      "breed",
+      "contact"
     ];
     const newErrors = {};
     requiredFields.forEach((field) => {
@@ -76,18 +88,86 @@ export default function CadastroAdocao() {
         newErrors[field] = true;
       }
     });
-
     if (idadeError || Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       alert("Por favor, preencha os campos obrigatórios corretamente.");
       return;
     }
 
-    // Aqui você pode processar ou enviar os dados para a API
-    console.log("Dados do cadastro:", formData);
+    // Faz o upload da foto para o Supabase Storage
+    let photoUrl = "";
+    if (formData.foto) {
+      console.log("Arquivo selecionado:", formData.foto);
+      const file = formData.foto;
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      // Como o bucket já se chama "animals", usamos somente o fileName como path.
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from("animals")
+        .upload(filePath, file);
+      if (uploadError) {
+        alert("Erro no upload da imagem: " + uploadError.message);
+        return;
+      }
+
+      // Obtenção da URL pública (getPublicUrl retorna um objeto data com a propriedade publicUrl)
+      const { data } = supabase.storage
+        .from("animals")
+        .getPublicUrl(filePath);
+      console.log("Public URL gerada:", data.publicUrl);
+      photoUrl = data.publicUrl;
+    }
+
+    // Constrói a localização concatenando cidade e estado
+    const location = `${formData.cidade}, ${formData.estado}`;
+
+    const insertData = {
+      name: formData.nome,
+      species: formData.especie,
+      gender: formData.sexo,
+      size: formData.porte,
+      age: parseInt(formData.idade, 10),
+      city: formData.cidade,
+      cep: formData.cep,
+      state: formData.estado,
+      image: photoUrl,
+      description: formData.description,
+      breed: formData.breed,
+      contact: formData.contact,
+      location: location,
+    };
+
+    const { error: insertError } = await supabase
+      .from("animals_adocao")
+      .insert([insertData]);
+
+    if (insertError) {
+      alert("Erro ao cadastrar o pet: " + insertError.message);
+      console.error("Erro ao inserir pet:", insertError);
+      return;
+    }
+
+    alert("Pet cadastrado com sucesso!");
+    setFormData({
+      nome: "",
+      especie: "",
+      sexo: "",
+      porte: "",
+      idade: "",
+      unidadeIdade: "anos",
+      cidade: "",
+      cep: "",
+      estado: "",
+      foto: null,
+      description: "",
+      breed: "",
+      contact: ""
+    });
+    navigate("/adocao");
   };
 
-  // Função auxiliar para renderizar a label com asterisco vermelho quando houver erro
   const renderLabel = (labelText, fieldName) => (
     <label className="block text-sm font-medium text-gray-700">
       {labelText} {errors[fieldName] && <span className="text-red-500">*</span>}
@@ -96,21 +176,19 @@ export default function CadastroAdocao() {
 
   return (
     <div style={{ backgroundColor: "#D2B48C" }} className="min-h-screen">
-      {/* Hero reintroduzido */}
       <Hero
         backgroundImage={cadastroAdocaoImg}
         title="Cadastro para Adoção"
         subtitle="Coloque as informações do pet que será adotado."
       />
 
-      {/* Container do formulário com sobreposição para preencher o Hero */}
       <div className="relative z-30 mt-[-240px] py-12">
         <div className="container mx-auto px-4">
           <form
             onSubmit={handleSubmit}
             className="bg-white shadow-md rounded-lg p-6 max-w-2xl mx-auto space-y-6"
           >
-            {/* Nome do animal */}
+            {/* Nome do pet */}
             <div>
               {renderLabel("Nome do animal", "nome")}
               <input
@@ -190,7 +268,7 @@ export default function CadastroAdocao() {
               </div>
             </div>
 
-            {/* Linha para Idade do animal e Cidade */}
+            {/* Linha para Idade e Cidade */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 {renderLabel("Idade do animal", "idade")}
@@ -237,6 +315,99 @@ export default function CadastroAdocao() {
                   }`}
                 />
                 {errors.cidade && (
+                  <p className="text-red-500 text-xs mt-1">Campo obrigatório</p>
+                )}
+              </div>
+            </div>
+
+            {/* Seção para Descrição, Raça e Contato */}
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                {renderLabel("Descrição do animal", "description")}
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Descreva o animal"
+                  rows="3"
+                  className={`mt-1 p-2 block w-full border border-gray-300 rounded ${
+                    errors.description ? "border-red-500" : ""
+                  }`}
+                />
+                {errors.description && (
+                  <p className="text-red-500 text-xs mt-1">Campo obrigatório</p>
+                )}
+              </div>
+              <div>
+                {renderLabel("Raça do animal", "breed")}
+                <input
+                  type="text"
+                  name="breed"
+                  value={formData.breed}
+                  onChange={handleChange}
+                  placeholder="Insira a raça do animal"
+                  className={`mt-1 p-2 block w-full border border-gray-300 rounded ${
+                    errors.breed ? "border-red-500" : ""
+                  }`}
+                />
+                {errors.breed && (
+                  <p className="text-red-500 text-xs mt-1">Campo obrigatório</p>
+                )}
+              </div>
+              <div>
+                {renderLabel("Contato para adoção", "contact")}
+                <div className="mb-2">
+                  <span className="block text-sm font-medium text-gray-700">
+                    Tipo de contato
+                  </span>
+                  <div className="flex gap-4 mt-1">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="contactType"
+                        value="phone"
+                        checked={contactType === "phone"}
+                        onChange={(e) => setContactType(e.target.value)}
+                        className="mr-2"
+                      />
+                      Telefone
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="contactType"
+                        value="email"
+                        checked={contactType === "email"}
+                        onChange={(e) => setContactType(e.target.value)}
+                        className="mr-2"
+                      />
+                      Email
+                    </label>
+                  </div>
+                </div>
+                {contactType === "phone" ? (
+                  <IMaskInput
+                    mask="+55 (00) 00000-0000"
+                    unmask={false}
+                    name="contact"
+                    value={formData.contact}
+                    onAccept={(value) =>
+                      setFormData({ ...formData, contact: value })
+                    }
+                    placeholder="+55 (11) 12345-6789"
+                    className="mt-1 p-2 block w-full border border-gray-300 rounded"
+                  />
+                ) : (
+                  <input
+                    type="email"
+                    name="contact"
+                    value={formData.contact}
+                    onChange={handleChange}
+                    placeholder="seuemail@exemplo.com"
+                    className="mt-1 p-2 block w-full border border-gray-300 rounded"
+                  />
+                )}
+                {errors.contact && (
                   <p className="text-red-500 text-xs mt-1">Campo obrigatório</p>
                 )}
               </div>

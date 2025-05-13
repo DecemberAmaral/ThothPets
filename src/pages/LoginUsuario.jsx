@@ -1,31 +1,43 @@
 // src/pages/LoginUsuario.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient"; // Certifique-se de ter configurado o supabaseClient
 
 export default function LoginUsuario() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [manterConectado, setManterConectado] = useState(false);
   const [errors, setErrors] = useState({ email: false, senha: false });
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = { email: false, senha: false };
+
     if (email.trim() === "") newErrors.email = true;
     if (senha.trim() === "") newErrors.senha = true;
     setErrors(newErrors);
 
     if (newErrors.email || newErrors.senha) return;
 
-    // Aqui você adiciona sua lógica de autenticação, por exemplo, uma chamada à API.
-    console.log("Login", { email, senha, manterConectado });
-    
-    // Se o login for bem-sucedido, redirecione para a página desejada (ex: home ou dashboard)
-    navigate("/");
+    // Autentica o usuário com o Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+
+    if (error) {
+      setMessage(`Erro ao fazer login: ${error.message}`);
+      return;
+    }
+
+    setMessage("Login realizado com sucesso!");
+    // Redireciona após um breve delay (opcional)
+    setTimeout(() => navigate("/"), 2000);
   };
 
-  // Função auxiliar para renderizar a label com asterisco (caso haja erro)
+  // Função auxiliar para renderizar as labels com asterisco (se houver erro)
   const renderLabel = (label, field) => (
     <label htmlFor={field} className="block text-gray-700 text-sm font-bold mb-2">
       {label} {errors[field] && <span className="text-red-500">*</span>}
@@ -35,10 +47,11 @@ export default function LoginUsuario() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: "#D2B48C" }} // Fundo bege
+      style={{ backgroundColor: "#D2B48C" }}
     >
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Login de Usuário</h1>
+        {message && <p className="text-center text-red-500 mb-4">{message}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             {renderLabel("Email", "email")}
@@ -89,7 +102,10 @@ export default function LoginUsuario() {
         </form>
         <div className="mt-4 text-center">
           <span className="text-sm text-gray-700">Não possui uma conta? </span>
-          <Link to="/cadastro-usuario" className="text-sm font-bold text-emerald-500 hover:text-emerald-800">
+          <Link
+            to="/cadastro-usuario"
+            className="text-sm font-bold text-emerald-500 hover:text-emerald-800"
+          >
             Cadastre-se.
           </Link>
         </div>

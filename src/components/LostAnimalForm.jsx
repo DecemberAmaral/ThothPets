@@ -19,17 +19,19 @@ export default function LostAnimalForm({ onPublish }) {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: files ? files[0] : value
-    }));
+    if (name === "image") {
+      setFormData({
+        ...formData,
+        image: files && files[0] ? URL.createObjectURL(files[0]) : null
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const validateFields = () => {
     const newErrors = {};
-    // Validação do campo Nome do Animal
     if (!formData.nome) newErrors.nome = "Campo obrigatório";
-    // Validação dos demais campos obrigatórios
     if (!formData.image) newErrors.image = "Campo obrigatório";
     if (!formData.especie) newErrors.especie = "Campo obrigatório";
     if (!formData.porte) newErrors.porte = "Campo obrigatório";
@@ -37,32 +39,37 @@ export default function LostAnimalForm({ onPublish }) {
     if (!formData.estado) newErrors.estado = "Campo obrigatório";
     if (!formData.cidade) newErrors.cidade = "Campo obrigatório";
     if (!formData.descricao) newErrors.descricao = "Campo obrigatório";
-
-    // Pelo menos um dos contatos deve ser preenchido
     if (!formData.email && !formData.phone) {
       newErrors.contact = "Pelo menos um contato (e-mail ou telefone) é obrigatório";
     }
-
     return newErrors;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     const validationErrors = validateFields();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
-      // Não envia se houver erros
       return;
     }
-
     console.log("Dados enviados:", formData);
     onPublish(formData);
+    setFormData({
+      nome: "",
+      especie: "",
+      sexo: "",
+      porte: "",
+      descricao: "",
+      estado: "",
+      cidade: "",
+      email: "",
+      phone: "",
+      image: null
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Campo Nome do Animal */}
       <div>
         <label className="block mb-1 font-bold">
           Nome do Animal <span className="text-red-500">*</span>
@@ -79,7 +86,6 @@ export default function LostAnimalForm({ onPublish }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Imagem */}
         <div>
           <label className="block mb-1 font-bold">
             Imagem <span className="text-red-500">*</span>
@@ -94,7 +100,6 @@ export default function LostAnimalForm({ onPublish }) {
           {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
         </div>
 
-        {/* Espécie */}
         <div>
           <label className="block mb-1 font-bold">
             Espécie <span className="text-red-500">*</span>
@@ -113,7 +118,6 @@ export default function LostAnimalForm({ onPublish }) {
           {errors.especie && <p className="text-red-500 text-xs mt-1">{errors.especie}</p>}
         </div>
 
-        {/* Porte */}
         <div>
           <label className="block mb-1 font-bold">
             Porte <span className="text-red-500">*</span>
@@ -132,7 +136,6 @@ export default function LostAnimalForm({ onPublish }) {
           {errors.porte && <p className="text-red-500 text-xs mt-1">{errors.porte}</p>}
         </div>
 
-        {/* Sexo */}
         <div>
           <label className="block mb-1 font-bold">
             Sexo <span className="text-red-500">*</span>
@@ -150,7 +153,6 @@ export default function LostAnimalForm({ onPublish }) {
           {errors.sexo && <p className="text-red-500 text-xs mt-1">{errors.sexo}</p>}
         </div>
 
-        {/* Estado */}
         <div>
           <label className="block mb-1 font-bold">
             Estado <span className="text-red-500">*</span>
@@ -169,7 +171,6 @@ export default function LostAnimalForm({ onPublish }) {
           {errors.estado && <p className="text-red-500 text-xs mt-1">{errors.estado}</p>}
         </div>
 
-        {/* Cidade */}
         <div>
           <label className="block mb-1 font-bold">
             Cidade <span className="text-red-500">*</span>
@@ -186,7 +187,6 @@ export default function LostAnimalForm({ onPublish }) {
         </div>
       </div>
 
-      {/* Campos para contato */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <div>
           <label className="block mb-1 font-bold">
@@ -210,14 +210,13 @@ export default function LostAnimalForm({ onPublish }) {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            placeholder="551199123456"
+            placeholder="+55 (11) 12345-6789"
             className="w-full p-2 border border-gray-300 rounded"
           />
         </div>
       </div>
       {errors.contact && <p className="text-red-500 text-xs mt-1">{errors.contact}</p>}
 
-      {/* Descrição */}
       <div>
         <label className="block mb-1 font-bold">
           Descrição <span className="text-red-500">*</span>
@@ -229,7 +228,9 @@ export default function LostAnimalForm({ onPublish }) {
           placeholder="Descreva os detalhes do resgate, como o local e o contexto..."
           className="w-full p-2 border border-gray-300 rounded"
         ></textarea>
-        {errors.descricao && <p className="text-red-500 text-xs mt-1">{errors.descricao}</p>}
+        {errors.descricao && (
+          <p className="text-red-500 text-xs mt-1">{errors.descricao}</p>
+        )}
       </div>
 
       <button

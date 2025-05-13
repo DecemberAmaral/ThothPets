@@ -21,3 +21,8 @@
   scrollbar-width: thin; /* Opções: auto, thin ou none */
   scrollbar-color: #10B981 #B2D8B2; /* Primeiro valor para a thumb, segundo para a track */
 }
+
+/* Regras globais para exibir o cursor pointer em elementos clicáveis (botões e links) */
+a, button {
+  cursor: pointer;
+}

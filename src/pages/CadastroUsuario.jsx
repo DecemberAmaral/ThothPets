@@ -1,6 +1,7 @@
 // src/pages/CadastroUsuario.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 export default function CadastroUsuario() {
   const [formData, setFormData] = useState({
@@ -12,22 +13,25 @@ export default function CadastroUsuario() {
     nascimento: "",
   });
   const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
+  // Handler genérico para inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
-    // Remove o erro se o campo tiver sido preenchido
     if (errors[name]) {
       setErrors((prevErrors) => ({ ...prevErrors, [name]: false }));
     }
   };
 
-  const handleSubmit = (e) => {
+  // Handler de submit que valida e cria a conta
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     const newErrors = {};
     if (!formData.nome.trim()) newErrors.nome = true;
     if (!formData.email.trim()) newErrors.email = true;
@@ -38,13 +42,43 @@ export default function CadastroUsuario() {
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
-      return; // Se alguma validação falhar, não submete o formulário
+      return; // Não submete se houver erros na validação
     }
 
-    // Aqui você pode enviar os dados para uma API para criar a conta
-    console.log("Dados de cadastro:", formData);
-    // Após sucesso, redirecione para a Home, o login ou outra página desejada
-    navigate("/");
+    // Cria o usuário na tabela de autenticação do Supabase (auth.users)
+    const { data, error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.senha,
+    });
+
+    if (error) {
+      setMessage(`Erro: ${error.message}`);
+      console.error("Erro ao cadastrar:", error);
+      return;
+    }
+
+    // Insere os dados adicionais na tabela 'profiles'
+    const userId = data?.user?.id;
+    if (userId) {
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: userId, // Relaciona o profile ao usuário criado
+          nome: formData.nome,
+          cpf: formData.cpf,
+          telefone: formData.telefone,
+          nascimento: formData.nascimento,
+        },
+      ]);
+
+      if (profileError) {
+        setMessage(`Erro ao salvar perfil: ${profileError.message}`);
+        console.error("Erro ao inserir perfil:", profileError);
+        return;
+      }
+
+      setMessage("Cadastro realizado com sucesso! Verifique seu e-mail para confirmação.");
+      setTimeout(() => navigate("/"), 3000);
+    }
   };
 
   // Função auxiliar para renderizar as labels com asterisco quando houver erro
@@ -55,11 +89,12 @@ export default function CadastroUsuario() {
   );
 
   return (
-    // Aqui definimos o fundo bege, utilizando inline style para garantir a cor
     <div style={{ backgroundColor: "#D2B48C" }} className="min-h-screen p-4 pt-27">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-center">Cadastro de Conta</h1>
+        {message && <p className="text-center text-sm text-red-500 mb-4">{message}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nome */}
           <div>
             {renderLabel("Nome Completo", "nome")}
             <input
@@ -69,9 +104,12 @@ export default function CadastroUsuario() {
               placeholder="Seu nome completo"
               value={formData.nome}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${errors.nome ? "border-red-500" : "border-gray-300"}`}
+              className={`w-full p-2 border rounded ${
+                errors.nome ? "border-red-500" : "border-gray-300"
+              }`}
             />
           </div>
+          {/* Email */}
           <div>
             {renderLabel("Email", "email")}
             <input
@@ -81,9 +119,12 @@ export default function CadastroUsuario() {
               placeholder="seuemail@exemplo.com"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${errors.email ? "border-red-500" : "border-gray-300"}`}
+              className={`w-full p-2 border rounded ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              }`}
             />
           </div>
+          {/* Senha */}
           <div>
             {renderLabel("Senha", "senha")}
             <input
@@ -93,9 +134,12 @@ export default function CadastroUsuario() {
               placeholder="Crie sua senha"
               value={formData.senha}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${errors.senha ? "border-red-500" : "border-gray-300"}`}
+              className={`w-full p-2 border rounded ${
+                errors.senha ? "border-red-500" : "border-gray-300"
+              }`}
             />
           </div>
+          {/* CPF */}
           <div>
             {renderLabel("CPF", "cpf")}
             <input
@@ -105,21 +149,27 @@ export default function CadastroUsuario() {
               placeholder="Seu CPF"
               value={formData.cpf}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${errors.cpf ? "border-red-500" : "border-gray-300"}`}
+              className={`w-full p-2 border rounded ${
+                errors.cpf ? "border-red-500" : "border-gray-300"
+              }`}
             />
           </div>
+          {/* Telefone */}
           <div>
             {renderLabel("Telefone", "telefone")}
             <input
-              type="tel"
+              type="text"
               id="telefone"
               name="telefone"
               placeholder="Seu telefone"
               value={formData.telefone}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${errors.telefone ? "border-red-500" : "border-gray-300"}`}
+              className={`w-full p-2 border rounded ${
+                errors.telefone ? "border-red-500" : "border-gray-300"
+              }`}
             />
           </div>
+          {/* Data de Nascimento */}
           <div>
             {renderLabel("Data de Nascimento", "nascimento")}
             <input
@@ -128,7 +178,9 @@ export default function CadastroUsuario() {
               name="nascimento"
               value={formData.nascimento}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${errors.nascimento ? "border-red-500" : "border-gray-300"}`}
+              className={`w-full p-2 border rounded ${
+                errors.nascimento ? "border-red-500" : "border-gray-300"
+              }`}
             />
           </div>
           <button
@@ -140,7 +192,10 @@ export default function CadastroUsuario() {
         </form>
         <div className="mt-4 text-center">
           <span className="text-sm text-gray-700">Já possui uma conta? </span>
-          <Link to="/login-usuario" className="text-sm font-bold text-emerald-500 hover:text-emerald-800">
+          <Link
+            to="/login-usuario"
+            className="text-sm font-bold text-emerald-500 hover:text-emerald-800"
+          >
             Faça o Login.
           </Link>
         </div>

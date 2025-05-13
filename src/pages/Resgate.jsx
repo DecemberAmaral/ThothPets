@@ -1,72 +1,75 @@
 // src/pages/Resgate.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Hero from "../components/Hero";
 import LostAnimalForm from "../components/LostAnimalForm";
 import LostAnimalList from "../components/LostAnimalList";
 import resgateHeroImage from "../assets/resgateHero.png";
+import { supabase } from "../supabaseClient";
 
-export default function Resgate() {
-  // Dummy posts para exibir os últimos anúncios de resgate
-  const [animals, setAnimals] = useState([
-    {
-      id: 1,
-      nome: "Totó",
-      especie: "Cachorro",
-      sexo: "Macho",
-      porte: "Médio",
-      mensagem: "Visto pela última vez na rua X.",
-      local: "SP - São Paulo",
-      image: "",
-    },
-    {
-      id: 2,
-      nome: "Luna",
-      especie: "Gato",
-      sexo: "Fêmea",
-      porte: "Pequeno",
-      mensagem: "Perdida próxima ao shopping.",
-      local: "RJ - Rio de Janeiro",
-      image: "",
-    },
-    {
-      id: 3,
-      nome: "Max",
-      especie: "Cachorro",
-      sexo: "Macho",
-      porte: "Grande",
-      mensagem: "Ajudem a encontrar!",
-      local: "MG - Belo Horizonte",
-      image: "",
-    },
-    {
-      id: 4,
-      nome: "Bella",
-      especie: "Cachorro",
-      sexo: "Fêmea",
-      porte: "Médio",
-      mensagem: "Desaparecida desde ontem.",
-      local: "RS - Porto Alegre",
-      image: "",
-    },
-  ]);
+export default function Resgate({ user, setShowLoginModal }) {
+  // Lista de anúncios vem do Supabase (inicia vazia)
+  const [animals, setAnimals] = useState([]);
 
-  const handlePublish = (formData) => {
-    // Exemplo: inserindo o novo anúncio na lista
+  // Estados para controlar o popup de detalhes
+  const [selectedAnimal, setSelectedAnimal] = useState(null);
+  const [showAnimalPopup, setShowAnimalPopup] = useState(false);
+
+  // Função para buscar os anúncios de resgate do Supabase
+  async function fetchAnimals() {
+    const { data, error } = await supabase
+      .from("lost_animals")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Erro ao buscar anúncios de resgate:", error);
+    } else {
+      setAnimals(data);
+    }
+  }
+
+  useEffect(() => {
+    fetchAnimals();
+  }, []);
+
+  // Função para publicar um anúncio (insere no Supabase e recarrega a lista)
+  const handlePublish = async (formData) => {
     const newAnimal = {
-      id: animals.length + 1,
-      nome: "Novo Animal", // Caso deseje incluir também o nome via formulário, adicione esse campo.
-      ...formData,
-      mensagem: formData.descricao,
-      local: `${formData.cidade ? formData.cidade + ", " : ""}${formData.estado.toUpperCase()}`
+      nome: formData.nome || "Novo Animal",
+      especie: formData.especie,
+      porte: formData.porte,
+      sexo: formData.sexo,
+      estado: formData.estado,
+      cidade: formData.cidade,
+      local: `${formData.cidade ? formData.cidade + ", " : ""}${formData.estado.toUpperCase()}`,
+      // Em uma integração completa, a imagem deverá ser enviada para o Supabase Storage
+      image: formData.image,
+      descricao: formData.descricao,
+      mensagem: formData.descricao, // mapeando o campo "descricao"
+      email: formData.email,
+      phone: formData.phone,
     };
-    setAnimals([newAnimal, ...animals]);
+
+    const { error } = await supabase.from("lost_animals").insert([newAnimal]);
+    if (error) {
+      alert("Erro ao publicar: " + error.message);
+    } else {
+      fetchAnimals();
+    }
+  };
+
+  // Abre o popup com os detalhes do anúncio
+  const handleViewDetails = (animal) => {
+    setSelectedAnimal(animal);
+    setShowAnimalPopup(true);
+  };
+
+  const closePopup = () => {
+    setSelectedAnimal(null);
+    setShowAnimalPopup(false);
   };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: "#D2B48C" }}
-    >
+    <div className="min-h-screen" style={{ backgroundColor: "#D2B48C" }}>
       <Hero
         backgroundImage={resgateHeroImage}
         title="Resgate"
@@ -74,18 +77,98 @@ export default function Resgate() {
       />
 
       <div className="container mx-auto px-4 py-8">
-        {/* A caixa unificada com o formulário e a listagem dos anúncios */}
         <div className="bg-white rounded-lg shadow-lg p-6 relative z-10 -mt-37 mb-32">
           <h2 className="text-2xl font-bold mb-4">Publicar Anúncio de Resgate</h2>
           <LostAnimalForm onPublish={handlePublish} />
 
-          {/* Separador visual */}
           <hr className="my-8" />
 
           <h2 className="text-xl font-bold mb-4">Últimos Anúncios de Resgate</h2>
-          <LostAnimalList animals={animals} />
+          <LostAnimalList animals={animals} onViewDetails={handleViewDetails} />
         </div>
       </div>
+
+      {showAnimalPopup && selectedAnimal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-8 rounded-lg max-w-3xl w-full relative">
+            <button
+              onClick={closePopup}
+              className="absolute top-4 right-4 text-3xl font-bold text-gray-600"
+            >
+              &times;
+            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="w-full h-80 bg-gray-200 rounded overflow-hidden flex items-center justify-center">
+                {selectedAnimal.image ? (
+                  <img
+                    src={selectedAnimal.image}
+                    alt={selectedAnimal.nome}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>Sem Imagem</span>
+                )}
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-3xl font-bold">{selectedAnimal.nome}</h3>
+                <p className="text-lg">
+                  <strong>Espécie:</strong> {selectedAnimal.especie || "Não informado"}
+                </p>
+                <p className="text-lg">
+                  <strong>Sexo:</strong> {selectedAnimal.sexo || "Não informado"}
+                </p>
+                <p className="text-lg">
+                  <strong>Porte:</strong> {selectedAnimal.porte || "Não informado"}
+                </p>
+                <p className="text-lg">
+                  <strong>Local:</strong> {selectedAnimal.local || "Não informado"}
+                </p>
+                <p className="text-lg">
+                  <strong>Mensagem:</strong> {selectedAnimal.mensagem || "Sem mensagem"}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              {user ? (
+                // Se o usuário estiver logado, exibe os botões de contato.
+                <div className="flex flex-col md:flex-row gap-4">
+                  {selectedAnimal.phone && (
+                    <a
+                      href={`https://wa.me/${selectedAnimal.phone.replace(/\D/g, "")}?text=Olá,%20vi%20seu%20anúncio%20de%20resgate%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-center bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded transition"
+                    >
+                      Contato via WhatsApp
+                    </a>
+                  )}
+                  {selectedAnimal.email && (
+                    <a
+                      href={`mailto:${selectedAnimal.email}?subject=Contato%20sobre%20seu%20an%C3%BAncio%20de%20resgate&body=Olá,%20vi%20seu%20anúncio%20e%20gostaria%20de%20conversar.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-center bg-blue-500 hover:bg-blue-600 text-white py-3 rounded transition"
+                    >
+                      Contato via Email
+                    </a>
+                  )}
+                </div>
+              ) : (
+                // Se o usuário não estiver logado, exibe o botão para login.
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="w-full px-4 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
+                  >
+                    Faça login para ver os contatos
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

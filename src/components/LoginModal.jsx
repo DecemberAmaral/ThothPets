@@ -1,15 +1,19 @@
 // src/components/LoginModal.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../supabaseClient"; // importe o cliente do Supabase
 
 export default function LoginModal({ onClose }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [manterConectado, setManterConectado] = useState(false);
   const [errors, setErrors] = useState({ email: false, senha: false });
+  const [loginError, setLoginError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validação dos campos
     const newErrors = { email: false, senha: false };
     if (email.trim() === "") newErrors.email = true;
     if (senha.trim() === "") newErrors.senha = true;
@@ -17,8 +21,20 @@ export default function LoginModal({ onClose }) {
     if (newErrors.email || newErrors.senha) {
       return;
     }
-    // Adicione aqui a lógica de autenticação (API, etc.)
-    console.log("Login", { email, senha, manterConectado });
+
+    // Tenta realizar o login com o Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+
+    if (error) {
+      console.error("Erro de login:", error.message);
+      setLoginError(error.message);
+      return;
+    }
+
+    console.log("Login realizado com sucesso!", data);
     onClose();
   };
 
@@ -63,6 +79,7 @@ export default function LoginModal({ onClose }) {
               }`}
             />
           </div>
+          {loginError && <p className="text-red-500 text-sm mb-4">{loginError}</p>}
           <div className="flex items-center mb-4">
             <input
               id="manterConectado"

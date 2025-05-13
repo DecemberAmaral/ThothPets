@@ -1,41 +1,27 @@
+// src/components/AdoptionCards.jsx
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
 import AdoptionCard from "./AdoptionCard";
 
-const dummyAnimals = [
-  {
-    id: 1,
-    species: "cachorro",
-    sex: "Macho",
-    size: "grande",
-    state: "PR",
-    city: "Ivaiporã",
-    age: "2",
-    name: "Rex",
-    description: "Amigável e brincalhão!",
-    location: "Ivaiporã, PR",
-    breed: "Vira-lata",
-    gender: "Macho",
-    image: "",
-  },
-  {
-    id: 2,
-    species: "gato",
-    sex: "Fêmea",
-    size: "pequeno",
-    state: "PR",
-    city: "Curitiba",
-    age: "1",
-    name: "Luna",
-    description: "Carinhosa e alegre!",
-    location: "Curitiba, PR",
-    breed: "Persa",
-    gender: "Fêmea",
-    image: "",
-  },
-  // Adicione mais animais conforme necessário.
-];
+export default function AdoptionCards({ filter, onAdopt }) {
+  const [animals, setAnimals] = useState([]);
 
-export default function AdoptionCards({ filter }) {
-  const filteredAnimals = dummyAnimals.filter((animal) => {
+  useEffect(() => {
+    async function fetchAnimals() {
+      const { data, error } = await supabase
+        .from("animals_adocao")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.error("Erro ao buscar animais para adoção:", error);
+      } else {
+        setAnimals(data);
+      }
+    }
+    fetchAnimals();
+  }, []);
+
+  const filteredAnimals = animals.filter((animal) => {
     let ageValid = true;
     if (filter.age !== "") {
       const numericAge = parseInt(animal.age, 10);
@@ -59,12 +45,15 @@ export default function AdoptionCards({ filter }) {
     );
   });
 
-  const sortedAnimals = filteredAnimals.sort((a, b) => b.id - a.id);
+  // Ordena pelos registros com data mais recente primeiro.
+  const sortedAnimals = filteredAnimals.sort((a, b) =>
+    a.created_at < b.created_at ? 1 : -1
+  );
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12">
       {sortedAnimals.map((animal) => (
-        <AdoptionCard key={animal.id} animal={animal} />
+        <AdoptionCard key={animal.id} animal={animal} onAdopt={onAdopt} />
       ))}
     </div>
   );
