@@ -47,7 +47,7 @@ export default function LoginUsuario() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: "#D2B48C" }}
+      style={{ backgroundColor: "#FFFFFF" }}
     >
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Login de Usuário</h1>

@@ -43,7 +43,7 @@ export default function AdoptionPage({ setShowLoginModal, user }) {
   };
 
   return (
-    <div className="relative overflow-x-hidden" style={{ backgroundColor: "#D2B48C" }}>
+    <div className="relative overflow-x-hidden" style={{ backgroundColor: "#FFFFFF" }}>
       <Hero backgroundImage={adoptionHeroImage} title="Adoção" />
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-lg p-6 mt-[-150px] mb-32 relative z-10">

@@ -6,7 +6,8 @@ import { supabase } from "../supabaseClient";
 import Hero from "../components/Hero";
 import cadastroAdocaoImg from "../assets/cadastroAdocaoImg.png"; // Corrija o caminho se necessário
 
-export default function CadastroAdocao() {
+// Recebe "user" como prop
+export default function CadastroAdocao({ user }) {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -27,7 +28,6 @@ export default function CadastroAdocao() {
 
   // Estado para definir se o contato informado é telefone ou email
   const [contactType, setContactType] = useState("phone");
-
   const [errors, setErrors] = useState({});
   const [idadeError, setIdadeError] = useState("");
 
@@ -101,7 +101,6 @@ export default function CadastroAdocao() {
       const file = formData.foto;
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      // Como o bucket já se chama "animals", usamos somente o fileName como path.
       const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
@@ -112,10 +111,7 @@ export default function CadastroAdocao() {
         return;
       }
 
-      // Obtenção da URL pública (getPublicUrl retorna um objeto data com a propriedade publicUrl)
-      const { data } = supabase.storage
-        .from("animals")
-        .getPublicUrl(filePath);
+      const { data } = supabase.storage.from("animals").getPublicUrl(filePath);
       console.log("Public URL gerada:", data.publicUrl);
       photoUrl = data.publicUrl;
     }
@@ -137,6 +133,7 @@ export default function CadastroAdocao() {
       breed: formData.breed,
       contact: formData.contact,
       location: location,
+      user_id: user ? user.id : null // Vincula o pet ao usuário logado
     };
 
     const { error: insertError } = await supabase
@@ -175,7 +172,7 @@ export default function CadastroAdocao() {
   );
 
   return (
-    <div style={{ backgroundColor: "#D2B48C" }} className="min-h-screen">
+    <div style={{ backgroundColor: "#FFFFFF" }} className="min-h-screen">
       <Hero
         backgroundImage={cadastroAdocaoImg}
         title="Cadastro para Adoção"

@@ -89,7 +89,7 @@ export default function CadastroUsuario() {
   );
 
   return (
-    <div style={{ backgroundColor: "#D2B48C" }} className="min-h-screen p-4 pt-27">
+    <div style={{ backgroundColor: "#FFFFFF" }} className="min-h-screen p-4 pt-27">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-center">Cadastro de Conta</h1>
         {message && <p className="text-center text-sm text-red-500 mb-4">{message}</p>}

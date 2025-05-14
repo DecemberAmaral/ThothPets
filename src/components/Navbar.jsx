@@ -4,42 +4,51 @@ import { Link, useNavigate } from "react-router-dom";
 import ThothLogo from "../assets/ThothLogo.png";
 import { UserIcon, Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 import historyIcon from "../assets/historyIcon.png"; // Ícone personalizado para Histórico
-import { supabase } from "../supabaseClient"; // Certifique-se de que o supabaseClient está configurado
+import { supabase } from "../supabaseClient";
 
-export default function Navbar({ setShowLoginModal }) {
+export default function Navbar({ setShowLoginModal, user }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
-
-  // Estados para gerenciar a sessão e o perfil do usuário
-  const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+
+  // Função auxiliar para rolar para a seção desejada na Home (ou Footer)
+  function handleScrollTo(id) {
+    if (window.location.pathname === "/") {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      navigate("/");
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 300);
+    }
+  }
 
   useEffect(() => {
     async function getSession() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData?.session?.user) {
-        setUser(sessionData.session.user);
         fetchProfile(sessionData.session.user.id);
       } else {
-        setUser(null);
         setProfile(null);
       }
     }
     getSession();
 
     // Listener para mudanças na autenticação
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          fetchProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
-        }
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
       }
-    );
+    });
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -64,7 +73,7 @@ export default function Navbar({ setShowLoginModal }) {
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (!error) {
-      setUser(null);
+      // Observe que chamei setUser(null) se necessário na sua lógica externa
       setProfile(null);
       setShowUserMenu(false);
       navigate("/");
@@ -75,8 +84,8 @@ export default function Navbar({ setShowLoginModal }) {
     <div className="fixed top-0 left-0 right-0 z-50 bg-emerald-500">
       <div className="w-full h-23 flex items-center justify-center">
         {/* Logo clicável que redireciona para a Home */}
-        <Link to="/" className="h-55 w-55 object-contain mr-4">
-          <img src={ThothLogo} alt="Logo" className="h-55 w-55 object-contain" />
+        <Link to="/" className="h-55 w-55 mr-4">
+          <img src={ThothLogo} alt="Logo" className="h-full w-full object-contain" />
         </Link>
 
         {/* Retângulo com a parte interna da Navbar */}
@@ -99,19 +108,28 @@ export default function Navbar({ setShowLoginModal }) {
               </Link>
             </li>
             <li>
-              <Link to="#" className="hover:text-emerald-600 transition">
+              <a
+                onClick={() => handleScrollTo("sobre-nos")}
+                className="cursor-pointer hover:text-emerald-600 transition"
+              >
+                Sobre‑nós
+              </a>
+            </li>
+            <li>
+              <a
+                onClick={() => handleScrollTo("quero-ajudar")}
+                className="cursor-pointer hover:text-emerald-600 transition"
+              >
                 Quero Ajudar
-              </Link>
+              </a>
             </li>
             <li>
-              <Link to="#" className="hover:text-emerald-600 transition">
+              <a
+                onClick={() => handleScrollTo("contato")}
+                className="cursor-pointer hover:text-emerald-600 transition"
+              >
                 Contato
-              </Link>
-            </li>
-            <li>
-              <Link to="#" className="hover:text-emerald-600 transition">
-                Sobre-nós
-              </Link>
+              </a>
             </li>
           </ul>
 
@@ -144,7 +162,15 @@ export default function Navbar({ setShowLoginModal }) {
                 Login/Cadastro
               </button>
             )}
-            <button onClick={() => navigate("/minhas-publicacoes")}>
+            <button
+              onClick={() => {
+                if (!user) {
+                  setShowLoginModal(true);
+                } else {
+                  navigate("/minhas-publicacoes");
+                }
+              }}
+            >
               <img
                 src={historyIcon}
                 alt="Histórico de Publicações"
@@ -190,19 +216,28 @@ export default function Navbar({ setShowLoginModal }) {
               </Link>
             </li>
             <li>
-              <Link to="#" className="hover:text-emerald-600 transition">
+              <a
+                onClick={() => { setMenuOpen(false); handleScrollTo("sobre-nos"); }}
+                className="cursor-pointer hover:text-emerald-600 transition"
+              >
+                Sobre‑nós
+              </a>
+            </li>
+            <li>
+              <a
+                onClick={() => { setMenuOpen(false); handleScrollTo("quero-ajudar"); }}
+                className="cursor-pointer hover:text-emerald-600 transition"
+              >
                 Quero Ajudar
-              </Link>
+              </a>
             </li>
             <li>
-              <Link to="#" className="hover:text-emerald-600 transition">
+              <a
+                onClick={() => { setMenuOpen(false); handleScrollTo("contato"); }}
+                className="cursor-pointer hover:text-emerald-600 transition"
+              >
                 Contato
-              </Link>
-            </li>
-            <li>
-              <Link to="#" className="hover:text-emerald-600 transition">
-                Sobre-Nós
-              </Link>
+              </a>
             </li>
           </ul>
           <div className="mt-4 flex flex-col space-y-4">
@@ -210,7 +245,7 @@ export default function Navbar({ setShowLoginModal }) {
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setShowUserMenu((prev) => !prev)}
-                  className="text-sm font-semibold text-gray-800 border border-[#E9FFDB] bg-[#E9FFDB] px-3 py-1 rounded-full hover:bg-[#D0F1C9] transition"
+                  className="text-sm font-semibold text-gray-800 bg-[#E9FFDB] border px-3 py-1 rounded-full hover:bg-[#D0F1C9] transition"
                 >
                   Olá, {profile.nome}
                 </button>
@@ -233,14 +268,16 @@ export default function Navbar({ setShowLoginModal }) {
               </button>
             )}
             <button
-              onClick={() => navigate("/minhas-publicacoes")}
+              onClick={() => {
+                if (!user) {
+                  setShowLoginModal(true);
+                } else {
+                  navigate("/minhas-publicacoes");
+                }
+              }}
               className="flex items-center text-sm font-semibold text-gray-800 hover:text-emerald-600 transition"
             >
-              <img
-                src={historyIcon}
-                alt="Histórico de Publicações"
-                className="h-8 w-8 mr-1"
-              />
+              <img src={historyIcon} alt="Histórico de Publicações" className="h-8 w-8 mr-1" />
               Histórico
             </button>
           </div>

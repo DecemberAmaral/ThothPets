@@ -31,22 +31,27 @@ export default function Resgate({ user, setShowLoginModal }) {
     fetchAnimals();
   }, []);
 
-  // Função para publicar um anúncio (insere no Supabase e recarrega a lista)
+  // Função para publicar um anúncio (o usuário precisa estar logado)
   const handlePublish = async (formData) => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    
     const newAnimal = {
       nome: formData.nome || "Novo Animal",
       especie: formData.especie,
       porte: formData.porte,
       sexo: formData.sexo,
-      estado: formData.estado,
+      estado: formData.estado || "Desconhecido",  // Fornece valor padrão se necessário
       cidade: formData.cidade,
-      local: `${formData.cidade ? formData.cidade + ", " : ""}${formData.estado.toUpperCase()}`,
-      // Em uma integração completa, a imagem deverá ser enviada para o Supabase Storage
+      local: `${formData.cidade ? formData.cidade + ", " : ""}${(formData.estado || "Desconhecido").toUpperCase()}`,
       image: formData.image,
       descricao: formData.descricao,
-      mensagem: formData.descricao, // mapeando o campo "descricao"
+      mensagem: formData.descricao,
       email: formData.email,
       phone: formData.phone,
+      user_id: user ? user.id : null
     };
 
     const { error } = await supabase.from("lost_animals").insert([newAnimal]);
@@ -69,7 +74,7 @@ export default function Resgate({ user, setShowLoginModal }) {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#D2B48C" }}>
+    <div className="min-h-screen" style={{ backgroundColor: "#FFFFFF" }}>
       <Hero
         backgroundImage={resgateHeroImage}
         title="Resgate"
@@ -79,7 +84,21 @@ export default function Resgate({ user, setShowLoginModal }) {
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-lg p-6 relative z-10 -mt-37 mb-32">
           <h2 className="text-2xl font-bold mb-4">Publicar Anúncio de Resgate</h2>
-          <LostAnimalForm onPublish={handlePublish} />
+          {user ? (
+            <LostAnimalForm onPublish={handlePublish} />
+          ) : (
+            <div className="text-center">
+              <p className="text-lg font-bold mb-4">
+                Você precisa estar logado para publicar anúncios de resgate.
+              </p>
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="w-full px-4 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
+              >
+                Login / Cadastro
+              </button>
+            </div>
+          )}
 
           <hr className="my-8" />
 
@@ -131,7 +150,6 @@ export default function Resgate({ user, setShowLoginModal }) {
 
             <div className="mt-8">
               {user ? (
-                // Se o usuário estiver logado, exibe os botões de contato.
                 <div className="flex flex-col md:flex-row gap-4">
                   {selectedAnimal.phone && (
                     <a
@@ -155,7 +173,6 @@ export default function Resgate({ user, setShowLoginModal }) {
                   )}
                 </div>
               ) : (
-                // Se o usuário não estiver logado, exibe o botão para login.
                 <div className="text-center">
                   <button
                     onClick={() => setShowLoginModal(true)}

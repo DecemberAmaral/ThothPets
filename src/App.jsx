@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import AdoptionPage from "./pages/AdoptionPage";
@@ -11,13 +11,14 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LoginModal from "./components/LoginModal";
 import UserPublications from "./pages/UserPublications";
+import ScrollToTop from "./components/ScrollToTop"; // Importação do componente ScrollToTop
 import { supabase } from "./supabaseClient";
 
 export default function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [user, setUser] = useState(null);
 
-  // Busca o usuário autenticado diretamente do Supabase usando getUser()
+  // Consulta a sessão do usuário via Supabase
   useEffect(() => {
     async function getUserSession() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -34,6 +35,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop /> {/* Este componente fará o scroll para o topo em cada mudança de rota */}
       <Navbar setShowLoginModal={setShowLoginModal} user={user} />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -43,7 +45,13 @@ export default function App() {
         />
         <Route
           path="/cadastro-adocao"
-          element={user ? <CadastroAdocao /> : <LoginModal onClose={() => setShowLoginModal(false)} />}
+          element={
+            user ? (
+              <CadastroAdocao user={user} />
+            ) : (
+              <LoginModal onClose={() => setShowLoginModal(false)} />
+            )
+          }
         />
         <Route path="/cadastro-usuario" element={<CadastroUsuario />} />
         <Route path="/login-usuario" element={<LoginUsuario />} />

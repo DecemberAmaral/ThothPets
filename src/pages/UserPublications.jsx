@@ -6,10 +6,9 @@ import { supabase } from "../supabaseClient";
 export default function UserPublications({ user, setShowLoginModal }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [adocaoPublications, setAdocaoPublications] = useState([]);
-  const [resgatePublications, setResgatePublications] = useState([]);
+  const [adoptionPublications, setAdoptionPublications] = useState([]);
+  const [rescuePublications, setRescuePublications] = useState([]);
 
-  // Se o usuário não estiver autenticado, redireciona e exibe uma tela de login completa.
   useEffect(() => {
     if (!user) {
       setShowLoginModal(true);
@@ -17,157 +16,188 @@ export default function UserPublications({ user, setShowLoginModal }) {
     }
   }, [user, setShowLoginModal, navigate]);
 
-  // Busca as publicações do usuário logado no Supabase.
   useEffect(() => {
-    async function fetchPublications() {
+    async function fetchAllPublications() {
       setLoading(true);
+      console.log("User ID:", user.id);
 
-      // Consulta publicações de adoção vinculadas ao usuário logado
-      const { data: adocaoData, error: adocaoError } = await supabase
+      // Consulta de adoção: pode vir de duas tabelas
+      const { data: adoPub, error: adoPubError } = await supabase
         .from("adocao_publications")
         .select("*")
         .eq("user_id", user.id);
-
-      if (adocaoError) {
-        console.error("Erro ao buscar publicações de adoção:", adocaoError);
+      if (adoPubError) {
+        console.error("Erro ao buscar adocao_publications:", adoPubError);
       } else {
-        setAdocaoPublications(adocaoData);
+        console.log("AdoPub:", adoPub);
       }
 
-      // Consulta publicações de resgate vinculadas ao usuário logado
-      const { data: resgateData, error: resgateError } = await supabase
+      const { data: animalsAdocao, error: animalsAdocaoError } = await supabase
+        .from("animals_adocao")
+        .select("*")
+        .eq("user_id", user.id);
+      if (animalsAdocaoError) {
+        console.error("Erro ao buscar animals_adocao:", animalsAdocaoError);
+      } else {
+        console.log("AnimalsAdocao:", animalsAdocao);
+      }
+
+      // Consulta de resgate: pode vir de duas tabelas
+      const { data: resPub, error: resPubError } = await supabase
         .from("resgate_publications")
         .select("*")
         .eq("user_id", user.id);
-
-      if (resgateError) {
-        console.error("Erro ao buscar publicações de resgate:", resgateError);
+      if (resPubError) {
+        console.error("Erro ao buscar resgate_publications:", resPubError);
       } else {
-        setResgatePublications(resgateData);
+        console.log("ResgatePublications:", resPub);
       }
 
+      const { data: lostAnimals, error: lostError } = await supabase
+        .from("lost_animals")
+        .select("*")
+        .eq("user_id", user.id);
+      if (lostError) {
+        console.error("Erro ao buscar lost_animals:", lostError);
+      } else {
+        console.log("LostAnimals:", lostAnimals);
+      }
+
+      // Mapeia os registros de adoção
+      const adoptionRecords1 = (adoPub || []).map(item => ({
+        id: item.id,
+        type: "adocao_publication",
+        title: item.titulo,
+        description: item.descricao,
+        created_at: item.created_at,
+      }));
+      const adoptionRecords2 = (animalsAdocao || []).map(item => ({
+        id: item.id,
+        type: "animals_adocao",
+        title: item.name, // ajuste para item.nome se sua coluna for esse
+        description: item.description,
+        created_at: item.created_at,
+      }));
+      const allAdoptionRecords = [...adoptionRecords1, ...adoptionRecords2].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      // Mapeia os registros de resgate
+      const rescueRecords1 = (resPub || []).map(item => ({
+        id: item.id,
+        type: "resgate_publication",
+        title: item.titulo,
+        description: item.descricao,
+        created_at: item.created_at,
+      }));
+      const rescueRecords2 = (lostAnimals || []).map(item => ({
+        id: item.id,
+        type: "lost_animals",
+        title: item.nome,
+        description: item.descricao,
+        created_at: item.created_at,
+      }));
+      const allRescueRecords = [...rescueRecords1, ...rescueRecords2].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      console.log("Adoption Publications fetched:", allAdoptionRecords);
+      console.log("Rescue Publications fetched:", allRescueRecords);
+
+      setAdoptionPublications(allAdoptionRecords);
+      setRescuePublications(allRescueRecords);
       setLoading(false);
     }
 
     if (user) {
-      fetchPublications();
+      fetchAllPublications();
     }
   }, [user]);
 
-  // Função para marcar uma publicação de adoção como "Adotado" (excluindo o registro)
-  async function markAdotado(id) {
-    if (window.confirm("Você confirma que esse animal foi adotado?")) {
-      const { error } = await supabase
-        .from("adocao_publications")
-        .delete()
-        .eq("id", id);
+  async function markRecord(id, type) {
+    if (window.confirm("Você confirma que esse anúncio foi finalizado?")) {
+      let table;
+      if (type === "adocao_publication") table = "adocao_publications";
+      else if (type === "animals_adocao") table = "animals_adocao";
+      else if (type === "resgate_publication") table = "resgate_publications";
+      else if (type === "lost_animals") table = "lost_animals";
+      if (!table) return;
+      
+      const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) {
-        alert("Erro ao marcar como adotado: " + error.message);
+        alert("Erro ao remover o anúncio: " + error.message);
       } else {
-        // Atualiza o estado removendo o item
-        setAdocaoPublications((prev) => prev.filter((pub) => pub.id !== id));
-        alert("Animal marcado como adotado e removido do seu histórico!");
+        // Atualiza separadamente os estados de adoção e resgate:
+        setAdoptionPublications(prev => prev.filter(pub => pub.id !== id));
+        setRescuePublications(prev => prev.filter(pub => pub.id !== id));
+        alert("Anúncio removido do seu histórico!");
       }
     }
   }
 
-  // Função para marcar uma publicação de resgate como "Resgatado" (excluindo o registro)
-  async function markResgatado(id) {
-    if (window.confirm("Você confirma que esse animal foi resgatado?")) {
-      const { error } = await supabase
-        .from("resgate_publications")
-        .delete()
-        .eq("id", id);
-      if (error) {
-        alert("Erro ao marcar como resgatado: " + error.message);
-      } else {
-        // Atualiza o estado removendo o item
-        setResgatePublications((prev) => prev.filter((pub) => pub.id !== id));
-        alert("Animal marcado como resgatado e removido do seu histórico!");
-      }
-    }
-  }
-
-  // Tela de carregamento
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#D2B48C" }}>
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <p className="text-xl font-semibold">Carregando publicações...</p>
       </div>
     );
   }
 
-  // Se o usuário não estiver autenticado (caso a verificação não tenha redirecionado), exibe uma tela de login completa.
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col justify-center items-center pb-20" style={{ backgroundColor: "#D2B48C" }}>
-        <p className="text-xl font-semibold text-center mb-4">
-          Para acessar seu histórico de publicações, você precisa estar logado.
-        </p>
-        <button
-          onClick={() => setShowLoginModal(true)}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Login / Cadastro
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#D2B48C" }}>
-      {/* Header */}
-      <header className="text-center py-4">
+    <div className="min-h-screen flex flex-col pt-32 bg-white">
+      <header className="text-center py-4 mt-12">
         <h1 className="text-3xl font-bold">Histórico de Publicações</h1>
       </header>
 
-      {/* Conteúdo principal (flex-grow para empurrar o footer para baixo) */}
-      <main className="flex-grow p-4">
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Publicações para Adoção</h2>
-          {adocaoPublications.length > 0 ? (
-            <ul className="space-y-4">
-              {adocaoPublications.map((pub) => (
-                <li key={pub.id} className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="font-bold text-xl">{pub.titulo}</h3>
-                  <p className="text-gray-700">{pub.descricao}</p>
-                  <button
-                    onClick={() => markAdotado(pub.id)}
-                    className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded"
-                  >
-                    Marcar como Adotado
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Nenhuma publicação para adoção encontrada.</p>
-          )}
-        </section>
+      {/* Seção de Adoção */}
+      <section className="px-4 pt-8">
+        <h2 className="text-2xl font-bold mb-4">Publicações de Adoção</h2>
+        {adoptionPublications.length === 0 ? (
+          <p className="text-center text-xl">Nenhum anúncio de adoção cadastrado.</p>
+        ) : (
+          <ul className="space-y-4">
+            {adoptionPublications.map(pub => (
+              <li key={pub.id} className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-bold text-xl">{pub.title}</h3>
+                <p className="text-gray-700">{pub.description}</p>
+                <button
+                  onClick={() => markRecord(pub.id, pub.type)}
+                  className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded"
+                >
+                  {pub.type === "adocao_publication" || pub.type === "animals_adocao"
+                    ? "Já adotaram"
+                    : "Foi encontrado"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Publicações para Resgate</h2>
-          {resgatePublications.length > 0 ? (
-            <ul className="space-y-4">
-              {resgatePublications.map((pub) => (
-                <li key={pub.id} className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="font-bold text-xl">{pub.titulo}</h3>
-                  <p className="text-gray-700">{pub.descricao}</p>
-                  <button
-                    onClick={() => markResgatado(pub.id)}
-                    className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded"
-                  >
-                    Marcar como Resgatado
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Nenhuma publicação para resgate encontrada.</p>
-          )}
-        </section>
-      </main>
-      {/* O Footer é renderizado no App.jsx (abaixo da rota), garantindo que essa página ocupe toda a altura */}
+      {/* Seção de Resgate */}
+      <section className="px-4 pt-8">
+        <h2 className="text-2xl font-bold mb-4">Publicações de Resgate</h2>
+        {rescuePublications.length === 0 ? (
+          <p className="text-center text-xl">Nenhum anúncio de resgate cadastrado.</p>
+        ) : (
+          <ul className="space-y-4">
+            {rescuePublications.map(pub => (
+              <li key={pub.id} className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-bold text-xl">{pub.title}</h3>
+                <p className="text-gray-700">{pub.description}</p>
+                <button
+                  onClick={() => markRecord(pub.id, pub.type)}
+                  className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded"
+                >
+                  {pub.type === "resgate_publication" || pub.type === "lost_animals"
+                    ? "Foi encontrado"
+                    : "Já adotaram"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
